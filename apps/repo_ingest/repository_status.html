@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Processing - {{ repository.name }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-2xl mx-auto p-6" x-data="statusApp()">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h1 class="text-2xl font-bold mb-2" x-text="repository.name"></h1>
+            <p class="text-gray-600">Processing status</p>
+        </div>
+
+        <!-- Status Card -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <!-- Status Badge -->
+            <div class="mb-6">
+                <span 
+                    :class="{
+                        'bg-blue-100 text-blue-800': repository.status === 'processing',
+                        'bg-green-100 text-green-800': repository.status === 'completed',
+                        'bg-red-100 text-red-800': repository.status === 'failed',
+                        'bg-yellow-100 text-yellow-800': repository.status === 'uploading'
+                    }"
+                    class="px-4 py-2 rounded-full font-semibold text-sm"
+                    x-text="repository.status.toUpperCase()"
+                ></span>
+            </div>
+
+            <!-- Progress Bar -->
+            <div x-show="repository.status !== 'completed' && repository.status !== 'failed'" class="mb-6">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm font-medium">Progress</span>
+                    <span class="text-sm font-medium" x-text="repository.progress_percentage + '%'"></span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div 
+                        class="bg-blue-500 h-3 rounded-full transition-all duration-500"
+                        :style="`width: ${repository.progress_percentage}%`"
+                    ></div>
+                </div>
+                <p class="text-sm text-gray-600 mt-2" x-text="repository.current_step"></p>
+            </div>
+
+            <!-- Completed Info -->
+            <div x-show="repository.status === 'completed'" class="mb-6">
+                <div class="flex items-center text-green-600 mb-4">
+                    <svg class="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                    </svg>
+                    <span class="font-semibold">Processing Complete!</span>
+                </div>
+                <div class="grid grid-cols-2 gap-4 text-sm">
+                    <div class="bg-gray-50 p-3 rounded">
+                        <p class="text-gray-600">Files Processed</p>
+                        <p class="text-2xl font-bold" x-text="repository.total_files"></p>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded">
+                        <p class="text-gray-600">Code Chunks</p>
+                        <p class="text-2xl font-bold" x-text="repository.total_chunks"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Message -->
+            <div x-show="repository.status === 'failed' && repository.error_message" class="mb-6">
+                <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                    <p class="font-semibold">Error:</p>
+                    <p x-text="repository.error_message"></p>
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex gap-3">
+                <a 
+                    href="/repo/"
+                    class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-800 py-2 px-4 rounded text-center font-semibold transition"
+                >
+                    Back to Repositories
+                </a>
+                <a 
+                    x-show="repository.status === 'completed'"
+                    href="/chat/new/"
+                    class="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 px-4 rounded text-center font-semibold transition"
+                >
+                    Start Chatting →
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function statusApp() {
+        return {
+            repository: {
+                name: '{{ repository.name }}',
+                status: '{{ repository.status }}',
+                current_step: '{{ repository.current_step }}',
+                progress_percentage: '{{ repository.progress_percentage }}',
+                error_message: '{{ repository.error_message|escapejs }}',
+                total_files: '{{ repository.total_files }}',
+                total_chunks: '{{ repository.total_chunks }}'
+            },
+            pollInterval: null,
+
+            init() {
+                // Poll for updates if not completed/failed
+                if (this.repository.status !== 'completed' && this.repository.status !== 'failed') {
+                    this.startPolling();
+                }
+            },
+
+            startPolling() {
+                this.pollInterval = setInterval(() => {
+                    this.fetchStatus();
+                }, 2000); // Poll every 2 seconds
+            },
+
+            async fetchStatus() {
+                try {
+                    const response = await fetch(window.location.pathname + 'api/');
+                    const data = await response.json();
+                    
+                    this.repository = data;
+
+                    // Stop polling if completed or failed
+                    if (data.status === 'completed' || data.status === 'failed') {
+                        clearInterval(this.pollInterval);
+                    }
+                } catch (error) {
+                    console.error('Status fetch failed:', error);
+                }
+            }
+        }
+    }
+    </script>
+</body>
+</html>
+

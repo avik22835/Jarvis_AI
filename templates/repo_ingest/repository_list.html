@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Repositories - Jarvis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Animated Gradient - The WOW Factor */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-gradient {
+            background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #667eea 50%, #764ba2 75%, #667eea 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Pulse Animation for Status */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(59, 130, 246, 0.5); }
+            50% { box-shadow: 0 0 20px rgba(59, 130, 246, 0.8); }
+        }
+        .processing {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-6xl mx-auto p-6">
+        <!-- ✅ NEW: Back to Home Button -->
+        <div class="mb-6">
+            <a 
+                href="{% url 'home' %}"
+                class="inline-flex items-center gap-2 bg-white text-gray-700 px-6 py-3 rounded-xl font-semibold shadow-md hover:shadow-xl transition transform hover:scale-105 border-2 border-gray-200"
+            >
+                <span class="text-2xl">🏠</span>
+                <span>Back to Home</span>
+            </a>
+        </div>
+
+        <!-- Animated Gradient Hero Header -->
+        <div class="animated-gradient text-white rounded-xl shadow-2xl p-12 mb-8">
+            <div class="flex flex-col md:flex-row justify-between items-center">
+                <div class="text-center md:text-left mb-6 md:mb-0">
+                    <div class="float text-7xl mb-4">📂</div>
+                    <h1 class="text-5xl md:text-6xl font-bold mb-3">My Repositories</h1>
+                    <p class="text-xl opacity-90">Manage your uploaded code repositories</p>
+                </div>
+                <a 
+                    href="/repo/upload/"
+                    class="bg-white text-blue-600 px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-2xl transition transform hover:scale-105 flex items-center gap-2"
+                >
+                    <span class="text-2xl">➕</span>
+                    <span>Upload New</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Repository List -->
+        <div class="space-y-6">
+            {% for repo in repositories %}
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-[1.02]">
+                <!-- Header Section -->
+                <div class="flex flex-col md:flex-row justify-between items-start mb-6">
+                    <div class="flex-1 mb-4 md:mb-0">
+                        <div class="flex items-center gap-3 mb-2">
+                            <span class="text-4xl">
+                                {% if repo.upload_type == 'github' %}🐙{% else %}📦{% endif %}
+                            </span>
+                            <h2 class="text-3xl font-bold text-gray-800">{{ repo.name }}</h2>
+                        </div>
+                        <p class="text-gray-600 text-lg ml-14">{{ repo.description|default:"No description provided" }}</p>
+                    </div>
+                    <span 
+                        class="px-6 py-3 rounded-xl text-base font-bold shadow-md
+                        {% if repo.status == 'completed' %}bg-gradient-to-r from-green-400 to-green-600 text-white
+                        {% elif repo.status == 'failed' %}bg-gradient-to-r from-red-400 to-red-600 text-white
+                        {% else %}bg-gradient-to-r from-blue-400 to-blue-600 text-white processing{% endif %}"
+                    >
+                        {% if repo.status == 'completed' %}✅ COMPLETED
+                        {% elif repo.status == 'failed' %}❌ FAILED
+                        {% elif repo.status == 'processing' %}⚙️ PROCESSING
+                        {% else %}{{ repo.status|upper }}{% endif %}
+                    </span>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-5 border-2 border-blue-100">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">📋</span>
+                            <div>
+                                <div class="text-sm text-gray-600 font-medium">Upload Type</div>
+                                <div class="text-xl font-bold text-gray-800">
+                                    {% if repo.upload_type == 'github' %}GitHub{% else %}ZIP File{% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-5 border-2 border-green-100">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">📄</span>
+                            <div>
+                                <div class="text-sm text-gray-600 font-medium">Total Files</div>
+                                <div class="text-xl font-bold text-gray-800">{{ repo.total_files }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-5 border-2 border-purple-100">
+                        <div class="flex items-center gap-3">
+                            <span class="text-3xl">🧩</span>
+                            <div>
+                                <div class="text-sm text-gray-600 font-medium">Code Chunks</div>
+                                <div class="text-xl font-bold text-gray-800">{{ repo.total_chunks }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-wrap gap-3">
+                    {% if repo.status == 'completed' %}
+                        <a 
+                            href="/chat/new/"
+                            class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-105 flex items-center gap-2"
+                        >
+                            <span class="text-xl">💬</span>
+                            <span>Start Chat</span>
+                        </a>
+                        {% if repo.upload_type == 'github' %}
+                        <button 
+                            onclick="syncRepo('{{ repo.id }}')"
+                            class="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-105 flex items-center gap-2"
+                        >
+                            <span class="text-xl">🔄</span>
+                            <span>Sync</span>
+                        </button>
+                        {% endif %}
+                    {% else %}
+                        <a 
+                            href="/repo/{{ repo.id }}/status/"
+                            class="bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-105 flex items-center gap-2"
+                        >
+                            <span class="text-xl">👁️</span>
+                            <span>View Status</span>
+                        </a>
+                    {% endif %}
+                    <button 
+                        onclick="deleteRepo('{{ repo.id }}')"
+                        class="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg hover:shadow-xl transition transform hover:scale-105 flex items-center gap-2"
+                    >
+                        <span class="text-xl">🗑️</span>
+                        <span>Delete</span>
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Empty State -->
+            <div class="bg-white rounded-xl shadow-lg p-16 text-center">
+                <div class="float text-8xl mb-6">📭</div>
+                <h3 class="text-3xl font-bold text-gray-800 mb-4">No Repositories Yet</h3>
+                <p class="text-xl text-gray-600 mb-8">Upload your first repository to get started with AI-powered code analysis</p>
+                <a 
+                    href="/repo/upload/"
+                    class="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white px-8 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-2xl transition transform hover:scale-105 inline-flex items-center gap-3"
+                >
+                    <span class="text-2xl">🚀</span>
+                    <span>Upload Your First Repository</span>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Feature Info Cards -->
+        <div class="grid md:grid-cols-3 gap-6 mt-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-4xl mb-3">🤖</div>
+                <h3 class="text-xl font-bold mb-2">AI-Powered</h3>
+                <p class="text-gray-600">Chat with your code using advanced AI</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-4xl mb-3">🔄</div>
+                <h3 class="text-xl font-bold mb-2">Auto Sync</h3>
+                <p class="text-gray-600">Keep GitHub repos up to date automatically</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-4xl mb-3">⚡</div>
+                <h3 class="text-xl font-bold mb-2">Lightning Fast</h3>
+                <p class="text-gray-600">Instant code analysis and responses</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    async function syncRepo(repoId) {
+        if (!confirm('🔄 Sync repository with latest changes from GitHub?\n\nThis will update your local copy with the newest code.')) return;
+        
+        try {
+            const response = await fetch(`/repo/${repoId}/sync/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                alert('✅ Sync started successfully! The page will reload to show the progress.');
+                location.reload();
+            } else {
+                alert('❌ Sync failed: ' + data.error);
+            }
+        } catch (error) {
+            alert('❌ Sync failed: ' + error.message);
+        }
+    }
+
+    async function deleteRepo(repoId) {
+        if (!confirm('⚠️ Delete this repository?\n\nThis action cannot be undone and will remove all associated data.')) return;
+        
+        try {
+            const response = await fetch(`/repo/${repoId}/delete/`, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken')
+                }
+            });
+            
+            if (response.ok) {
+                alert('✅ Repository deleted successfully!');
+                location.reload();
+            } else {
+                alert('❌ Delete failed');
+            }
+        } catch (error) {
+            alert('❌ Delete failed: ' + error.message);
+        }
+    }
+    </script>
+</body>
+</html>

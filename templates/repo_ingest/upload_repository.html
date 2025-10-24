@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Repository - Jarvis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Animated Gradient - The WOW Factor */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-gradient {
+            background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #667eea 50%, #764ba2 75%, #667eea 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-6" x-data="uploadApp()">
+        <!-- Animated Gradient Hero Header -->
+        <div class="animated-gradient text-white rounded-xl shadow-2xl p-12 mb-8 text-center">
+            <div class="float text-8xl mb-4">📦</div>
+            <h1 class="text-5xl md:text-6xl font-bold mb-4">Upload Repository</h1>
+            <p class="text-xl md:text-2xl opacity-90">Upload your code repository for AI-powered analysis</p>
+            <a href="/repo/" class="inline-block mt-6 bg-white text-blue-600 px-6 py-3 rounded-lg font-bold hover:shadow-2xl transition transform hover:scale-105">
+                ← Back to Repositories
+            </a>
+        </div>
+
+        <!-- Upload Form Card -->
+        <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition">
+            <!-- Upload Type Selector -->
+            <div class="mb-8">
+                <label class="block text-2xl font-bold mb-4 text-gray-800">Choose Upload Method</label>
+                <div class="grid md:grid-cols-2 gap-6">
+                    <button 
+                        @click="uploadType = 'zip'" 
+                        :class="uploadType === 'zip' ? 'animated-gradient text-white shadow-xl scale-105' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                        class="py-8 rounded-xl font-bold text-lg transition transform hover:scale-105 hover:shadow-xl"
+                    >
+                        <div class="text-5xl mb-3">📦</div>
+                        <div>ZIP File Upload</div>
+                        <div class="text-sm font-normal mt-2 opacity-80">Upload a compressed file</div>
+                    </button>
+                    <button 
+                        @click="uploadType = 'github'" 
+                        :class="uploadType === 'github' ? 'animated-gradient text-white shadow-xl scale-105' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                        class="py-8 rounded-xl font-bold text-lg transition transform hover:scale-105 hover:shadow-xl"
+                    >
+                        <div class="text-5xl mb-3">🐙</div>
+                        <div>GitHub Repository</div>
+                        <div class="text-sm font-normal mt-2 opacity-80">Clone from GitHub URL</div>
+                    </button>
+                </div>
+            </div>
+
+            <form @submit.prevent="submitForm">
+                <!-- Repository Name -->
+                <div class="mb-6">
+                    <label class="block text-lg font-bold mb-3 text-gray-800">
+                        <span class="text-2xl mr-2">📝</span> Repository Name *
+                    </label>
+                    <input 
+                        type="text" 
+                        x-model="repoName" 
+                        required
+                        placeholder="my-awesome-project"
+                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-4 text-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition"
+                    >
+                </div>
+
+                <!-- Repository Description -->
+                <div class="mb-6">
+                    <label class="block text-lg font-bold mb-3 text-gray-800">
+                        <span class="text-2xl mr-2">💬</span> Description (Optional)
+                    </label>
+                    <textarea 
+                        x-model="repoDescription" 
+                        rows="4"
+                        placeholder="Brief description of your project..."
+                        class="w-full border-2 border-gray-200 rounded-xl px-4 py-4 text-lg focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-200 transition"
+                    ></textarea>
+                </div>
+
+                <!-- ZIP Upload Section -->
+                <div x-show="uploadType === 'zip'" class="mb-8">
+                    <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-8 border-2 border-dashed border-blue-300 hover:border-blue-500 transition">
+                        <div class="text-center">
+                            <div class="text-6xl mb-4">📁</div>
+                            <label class="block text-lg font-bold mb-4 text-gray-800">Select ZIP File *</label>
+                            <input 
+                                type="file" 
+                                @change="handleFileSelect"
+                                accept=".zip"
+                                class="w-full text-lg file:mr-4 file:py-3 file:px-6 file:rounded-lg file:border-0 file:font-bold file:bg-blue-500 file:text-white hover:file:bg-blue-600 file:cursor-pointer cursor-pointer transition"
+                            >
+                            <p class="text-sm text-gray-600 mt-4">📊 Max size: 100MB</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GitHub URL Section -->
+                <div x-show="uploadType === 'github'" class="mb-8">
+                    <div class="bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl p-8 border-2 border-purple-200">
+                        <div class="mb-6">
+                            <label class="block text-lg font-bold mb-3 text-gray-800">
+                                <span class="text-2xl mr-2">🔗</span> GitHub URL *
+                            </label>
+                            <input 
+                                type="url" 
+                                x-model="githubUrl" 
+                                placeholder="https://github.com/username/repo"
+                                class="w-full border-2 border-gray-200 rounded-xl px-4 py-4 text-lg focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition"
+                            >
+                        </div>
+                        <div>
+                            <label class="block text-lg font-bold mb-3 text-gray-800">
+                                <span class="text-2xl mr-2">🌿</span> Branch
+                            </label>
+                            <input 
+                                type="text" 
+                                x-model="githubBranch" 
+                                placeholder="main"
+                                class="w-full border-2 border-gray-200 rounded-xl px-4 py-4 text-lg focus:outline-none focus:border-purple-500 focus:ring-4 focus:ring-purple-200 transition"
+                            >
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit"
+                    :disabled="uploading"
+                    class="w-full bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 disabled:from-gray-400 disabled:to-gray-500 text-white py-6 rounded-xl font-bold text-xl shadow-lg hover:shadow-2xl transition transform hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
+                >
+                    <span x-show="!uploading" class="flex items-center justify-center">
+                        <span class="text-3xl mr-3">🚀</span>
+                        <span>Upload & Process Repository</span>
+                    </span>
+                    <span x-show="uploading" class="flex items-center justify-center">
+                        <svg class="animate-spin h-6 w-6 mr-3" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Uploading...</span>
+                    </span>
+                </button>
+
+                <!-- Error Message -->
+                <div x-show="errorMessage" class="mt-6 p-6 bg-red-50 border-2 border-red-300 text-red-700 rounded-xl shadow-lg">
+                    <div class="flex items-start">
+                        <span class="text-3xl mr-3">⚠️</span>
+                        <div>
+                            <div class="font-bold text-lg mb-1">Error</div>
+                            <span x-text="errorMessage"></span>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+
+        <!-- Info Cards -->
+        <div class="grid md:grid-cols-3 gap-6 mt-8">
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-4xl mb-3">⚡</div>
+                <h3 class="text-xl font-bold mb-2">Fast Processing</h3>
+                <p class="text-gray-600">Your repository is analyzed in seconds</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-4xl mb-3">🔒</div>
+                <h3 class="text-xl font-bold mb-2">Secure Storage</h3>
+                <p class="text-gray-600">Your code is safely stored and encrypted</p>
+            </div>
+            <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-4xl mb-3">🤖</div>
+                <h3 class="text-xl font-bold mb-2">AI Analysis</h3>
+                <p class="text-gray-600">Get intelligent insights about your code</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    function uploadApp() {
+        return {
+            uploadType: 'zip',
+            repoName: '',
+            repoDescription: '',
+            githubUrl: '',
+            githubBranch: 'main',
+            selectedFile: null,
+            uploading: false,
+            errorMessage: '',
+
+            handleFileSelect(event) {
+                this.selectedFile = event.target.files[0];
+            },
+
+            async submitForm() {
+                this.errorMessage = '';
+                
+                // Validation
+                if (!this.repoName.trim()) {
+                    this.errorMessage = 'Repository name is required';
+                    return;
+                }
+
+                if (this.uploadType === 'zip' && !this.selectedFile) {
+                    this.errorMessage = 'Please select a ZIP file';
+                    return;
+                }
+
+                if (this.uploadType === 'github' && !this.githubUrl.trim()) {
+                    this.errorMessage = 'GitHub URL is required';
+                    return;
+                }
+
+                this.uploading = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('upload_type', this.uploadType);
+                    formData.append('repo_name', this.repoName);
+                    formData.append('repo_description', this.repoDescription);
+
+                    if (this.uploadType === 'zip') {
+                        formData.append('zip_file', this.selectedFile);
+                    } else {
+                        formData.append('github_url', this.githubUrl);
+                        formData.append('github_branch', this.githubBranch);
+                    }
+
+                    const response = await fetch('/repo/upload/submit/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        this.errorMessage = data.error || 'Upload failed';
+                        this.uploading = false;
+                    }
+                } catch (error) {
+                    this.errorMessage = 'Upload failed: ' + error.message;
+                    this.uploading = false;
+                }
+            }
+        }
+    }
+    </script>
+</body>
+</html>

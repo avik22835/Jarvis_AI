@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Debug Assistant - Jarvis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <style>
+        /* Animated Gradient Background */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        .animated-gradient {
+            background: linear-gradient(-45deg, #a855f7 0%, #6366f1 25%, #a855f7 50%, #6366f1 75%, #a855f7 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        /* Floating Animation */
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        .float {
+            animation: float 3s ease-in-out infinite;
+        }
+
+        /* Fade In Animation */
+        @keyframes fade-in {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out;
+        }
+
+        /* Pulse Animation for Loading */
+        @keyframes pulse-glow {
+            0%, 100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.4); }
+            50% { box-shadow: 0 0 30px rgba(168, 85, 247, 0.8); }
+        }
+
+        .pulse-glow {
+            animation: pulse-glow 2s ease-in-out infinite;
+        }
+
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #a855f7;
+            border-radius: 4px;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #9333ea;
+        }
+
+        /* Message Bubble Styles */
+        .message-bubble {
+            transition: all 0.3s ease;
+        }
+
+        .message-bubble:hover {
+            transform: scale(1.02);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        /* Code Block Styling */
+        .prose pre {
+            background: #1e293b !important;
+            border-radius: 0.75rem;
+            padding: 1rem;
+            overflow-x: auto;
+        }
+
+        .prose code {
+            background: #f1f5f9;
+            padding: 0.2rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="h-screen flex flex-col" x-data="debugApp()">
+        <!-- Header with Animated Gradient -->
+        <header class="animated-gradient shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 py-6">
+                <div class="flex flex-col sm:flex-row justify-between items-center gap-4">
+                    <div class="text-center sm:text-left">
+                        <div class="flex items-center justify-center sm:justify-start gap-3 mb-2">
+                            <div class="text-5xl float">🐛</div>
+                            <h1 class="text-3xl sm:text-4xl font-bold text-white">AI Debug Assistant</h1>
+                        </div>
+                        <p class="text-white text-opacity-90">Upload error screenshot or paste error message</p>
+                    </div>
+                    <div class="flex gap-3">
+                        <a href="/chat/" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg font-medium transition transform hover:scale-105 backdrop-blur-sm">
+                            💬 Main Chat
+                        </a>
+                        <a href="/repo/" class="bg-white bg-opacity-20 hover:bg-opacity-30 text-white px-4 py-2 rounded-lg font-medium transition transform hover:scale-105 backdrop-blur-sm">
+                            📂 Repositories
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Chat Area -->
+            <div class="flex-1 flex flex-col bg-white shadow-xl">
+                <!-- Messages -->
+                <div class="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 custom-scrollbar" id="messages">
+                    <!-- Welcome Message -->
+                    <template x-if="messages.length === 0">
+                        <div class="max-w-3xl mx-auto text-center py-8 sm:py-12">
+                            <div class="text-6xl sm:text-8xl mb-6 float">🔧</div>
+                            <h2 class="text-3xl sm:text-4xl font-bold mb-4 text-gray-800">Ready to Debug!</h2>
+                            <p class="text-gray-600 mb-8 text-lg">Upload an error screenshot or describe your problem</p>
+                            
+                            <!-- Pro Tip -->
+                            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-4 sm:p-6 mb-8 shadow-lg transform hover:scale-105 transition">
+                                <div class="flex items-center justify-center gap-2 mb-2">
+                                    <span class="text-2xl">💡</span>
+                                    <span class="font-bold text-purple-800 text-lg">Pro Tip</span>
+                                </div>
+                                <p class="text-gray-700">
+                                    Take a screenshot (PrtScn/Snipping Tool) and press 
+                                    <kbd class="px-3 py-1.5 bg-white border-2 border-purple-300 rounded-lg shadow-sm font-mono text-sm mx-1">Ctrl+V</kbd> 
+                                    to paste directly!
+                                </p>
+                            </div>
+
+                            <!-- Features Grid -->
+                            <div class="grid sm:grid-cols-2 gap-6 text-left">
+                                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105 border-2 border-purple-100">
+                                    <div class="text-4xl mb-3">📷</div>
+                                    <h3 class="text-xl font-bold mb-2 text-gray-800">Image Upload</h3>
+                                    <p class="text-gray-600">Upload error screenshots for automatic OCR extraction and analysis</p>
+                                </div>
+                                <div class="bg-white rounded-xl shadow-lg p-6 hover:shadow-2xl transition transform hover:scale-105 border-2 border-blue-100">
+                                    <div class="text-4xl mb-3">🌐</div>
+                                    <h3 class="text-xl font-bold mb-2 text-gray-800">Smart Search</h3>
+                                    <p class="text-gray-600">Searches StackOverflow and web for proven solutions</p>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Messages Loop -->
+                    <template x-for="(msg, index) in messages" :key="index">
+                        <div :class="msg.role === 'user' ? 'flex justify-end' : 'flex justify-start'" class="animate-fade-in">
+                            <div :class="msg.role === 'user' ? 'bg-gradient-to-r from-purple-500 to-blue-500 text-white' : 'bg-gray-50 border-2 border-gray-200'" 
+                                 class="max-w-3xl rounded-2xl p-4 sm:p-6 shadow-lg message-bubble">
+                                
+                                <!-- User Message -->
+                                <template x-if="msg.role === 'user'">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-2">
+                                            <span class="text-xl">👤</span>
+                                            <span class="font-semibold">You</span>
+                                        </div>
+                                        <p class="whitespace-pre-wrap text-lg" x-text="msg.content"></p>
+                                        <template x-if="msg.image">
+                                            <img :src="msg.image" class="mt-4 rounded-xl max-w-full sm:max-w-md shadow-lg border-2 border-white">
+                                        </template>
+                                    </div>
+                                </template>
+
+                                <!-- AI Response -->
+                                <template x-if="msg.role === 'assistant'">
+                                    <div>
+                                        <div class="flex items-center gap-2 mb-3">
+                                            <span class="text-xl">🤖</span>
+                                            <span class="font-semibold text-gray-800">Jarvis AI</span>
+                                        </div>
+
+                                        <!-- Error Info Box -->
+                                        <template x-if="msg.error_info && msg.error_info.error_type">
+                                            <div class="bg-gradient-to-r from-red-50 to-orange-50 border-2 border-red-300 rounded-xl p-4 mb-4 shadow-md">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <span class="text-2xl">🚨</span>
+                                                    <h4 class="font-bold text-red-800 text-lg">Error Detected</h4>
+                                                </div>
+                                                <p class="text-sm mb-1"><strong class="text-red-700">Type:</strong> <span class="font-mono bg-white px-2 py-1 rounded" x-text="msg.error_info.error_type"></span></p>
+                                                <p class="text-sm font-mono bg-white p-2 rounded mt-2" x-text="msg.error_info.error_message"></p>
+                                            </div>
+                                        </template>
+
+                                        <!-- AI Response Content -->
+                                        <div class="prose max-w-none text-gray-800">
+                                            <template x-if="msg.streaming">
+                                                <div x-html="marked.parse(msg.content || '🤔 Analyzing...')"></div>
+                                            </template>
+                                            <template x-if="!msg.streaming">
+                                                <div x-html="marked.parse(msg.content)"></div>
+                                            </template>
+                                        </div>
+
+                                        <!-- StackOverflow Sources -->
+                                        <template x-if="msg.stackoverflow_results && msg.stackoverflow_results.length > 0">
+                                            <div class="mt-6 pt-4 border-t-2 border-gray-200">
+                                                <div class="flex items-center gap-2 mb-3">
+                                                    <span class="text-xl">📚</span>
+                                                    <h4 class="font-bold text-gray-800">StackOverflow Solutions</h4>
+                                                </div>
+                                                <div class="space-y-3">
+                                                    <template x-for="result in msg.stackoverflow_results.slice(0, 3)">
+                                                        <a :href="result.link" target="_blank" 
+                                                           class="block p-4 bg-gradient-to-r from-orange-50 to-yellow-50 border-2 border-orange-200 rounded-xl hover:shadow-lg transition transform hover:scale-105">
+                                                            <p class="font-semibold text-blue-600 hover:text-blue-800 mb-1" x-text="result.title"></p>
+                                                            <div class="flex gap-4 text-xs text-gray-600">
+                                                                <span class="bg-green-100 px-2 py-1 rounded">⬆️ Score: <span x-text="result.score"></span></span>
+                                                                <span class="bg-blue-100 px-2 py-1 rounded">💬 Answers: <span x-text="result.answer_count"></span></span>
+                                                            </div>
+                                                        </a>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+
+                                        <!-- Web Results -->
+                                        <template x-if="msg.web_results && msg.web_results.length > 0">
+                                            <div class="mt-4">
+                                                <div class="flex items-center gap-2 mb-2">
+                                                    <span class="text-lg">🌐</span>
+                                                    <h4 class="font-bold text-gray-800 text-sm">Web Resources</h4>
+                                                </div>
+                                                <div class="space-y-2">
+                                                    <template x-for="result in msg.web_results">
+                                                        <a :href="result.link" target="_blank" 
+                                                           class="block text-sm text-blue-600 hover:text-blue-800 font-medium hover:underline bg-blue-50 px-3 py-2 rounded-lg transition"
+                                                           x-text="result.title"></a>
+                                                    </template>
+                                                </div>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+
+                    <!-- Loading -->
+                    <template x-if="loading">
+                        <div class="flex justify-start animate-fade-in">
+                            <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-2xl p-6 shadow-lg pulse-glow">
+                                <div class="flex items-center space-x-3">
+                                    <div class="animate-spin h-6 w-6 border-3 border-purple-500 rounded-full border-t-transparent"></div>
+                                    <span class="font-medium text-gray-800" x-text="loadingMessage"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Input Area -->
+                <div class="border-t-2 border-gray-200 p-4 sm:p-6 bg-gradient-to-r from-gray-50 to-gray-100">
+                    <form @submit.prevent="submitQuery" class="max-w-4xl mx-auto">
+                        <!-- Image Preview -->
+                        <template x-if="imagePreview">
+                            <div class="mb-4 relative inline-block animate-fade-in">
+                                <img :src="imagePreview" class="h-32 sm:h-40 rounded-xl border-2 border-purple-300 shadow-lg">
+                                <button @click="clearImage" type="button" 
+                                        class="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full w-8 h-8 flex items-center justify-center shadow-lg transition transform hover:scale-110 font-bold">
+                                    ×
+                                </button>
+                            </div>
+                        </template>
+
+                        <div class="flex gap-3">
+                            <!-- File Upload -->
+                            <label class="cursor-pointer">
+                                <input type="file" @change="handleFileSelect" accept="image/*" class="hidden">
+                                <div class="p-4 bg-white border-2 border-purple-300 rounded-xl hover:bg-purple-50 hover:border-purple-400 transition transform hover:scale-105 shadow-md">
+                                    <span class="text-2xl">📷</span>
+                                </div>
+                            </label>
+
+                            <!-- Text Input -->
+                            <input 
+                                type="text" 
+                                x-model="queryText"
+                                @paste="handlePaste"
+                                placeholder="Describe your error or paste error message..."
+                                class="flex-1 border-2 border-gray-300 rounded-xl px-4 sm:px-6 py-4 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent shadow-md text-lg transition"
+                            >
+
+                            <!-- Submit -->
+                            <button 
+                                type="submit"
+                                :disabled="loading || (!queryText.trim() && !selectedFile)"
+                                class="bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 disabled:from-gray-300 disabled:to-gray-400 text-white px-6 sm:px-8 py-4 rounded-xl font-bold text-lg shadow-lg transition transform hover:scale-105 disabled:transform-none disabled:cursor-not-allowed"
+                            >
+                                <span x-show="!loading" class="flex items-center gap-2">
+                                    <span>🔧</span>
+                                    <span class="hidden sm:inline">Debug</span>
+                                </span>
+                                <span x-show="loading">⏳</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marked.js for Markdown -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+
+    <script>
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        function debugApp() {
+            return {
+                messages: [],
+                queryText: '',
+                selectedFile: null,
+                imagePreview: null,
+                loading: false,
+                loadingMessage: 'Analyzing error...',
+
+                init() {
+                    document.addEventListener('paste', this.handlePaste.bind(this));
+                    console.log('📋 Paste listener active - Ctrl+V to paste images!');
+                },
+
+                handlePaste(event) {
+                    const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                    
+                    for (let item of items) {
+                        if (item.type.indexOf('image') !== -1) {
+                            event.preventDefault();
+                            
+                            const blob = item.getAsFile();
+                            console.log('✅ Image pasted from clipboard!');
+                            
+                            const file = new File([blob], 'pasted-image.png', { type: blob.type });
+                            this.selectedFile = file;
+                            
+                            const reader = new FileReader();
+                            reader.onload = (e) => {
+                                this.imagePreview = e.target.result;
+                                this.showNotification('📷 Image pasted! Click Debug to analyze.');
+                            };
+                            reader.readAsDataURL(blob);
+                            
+                            break;
+                        }
+                    }
+                },
+
+                handleFileSelect(event) {
+                    const file = event.target.files[0];
+                    if (file) {
+                        this.selectedFile = file;
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.imagePreview = e.target.result;
+                        };
+                        reader.readAsDataURL(file);
+                    }
+                },
+
+                clearImage() {
+                    this.selectedFile = null;
+                    this.imagePreview = null;
+                },
+
+                showNotification(message) {
+                    const notification = document.createElement('div');
+                    notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-emerald-500 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fade-in font-semibold';
+                    notification.textContent = message;
+                    document.body.appendChild(notification);
+                    
+                    setTimeout(() => {
+                        notification.style.opacity = '0';
+                        notification.style.transition = 'opacity 0.5s';
+                        setTimeout(() => notification.remove(), 500);
+                    }, 3000);
+                },
+
+                async submitQuery() {
+                    if (!this.queryText.trim() && !this.selectedFile) return;
+
+                    this.messages.push({
+                        role: 'user',
+                        content: this.queryText || '(Error screenshot)',
+                        image: this.imagePreview
+                    });
+
+                    const formData = new FormData();
+                    formData.append('query', this.queryText);
+                    if (this.selectedFile) {
+                        formData.append('error_image', this.selectedFile);
+                    }
+
+                    const userQuery = this.queryText;
+                    this.queryText = '';
+                    this.selectedFile = null;
+                    this.imagePreview = null;
+
+                    const assistantMsgIndex = this.messages.length;
+                    this.messages.push({
+                        role: 'assistant',
+                        content: '',
+                        error_info: {},
+                        stackoverflow_results: [],
+                        web_results: [],
+                        streaming: true
+                    });
+
+                    this.loading = true;
+                    this.loadingMessage = 'Processing...';
+
+                    try {
+                        const response = await fetch('/debug/submit/', {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRFToken': getCookie('csrftoken')
+                            },
+                            body: formData
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const reader = response.body.getReader();
+                        const decoder = new TextDecoder();
+                        let buffer = '';
+
+                        while (true) {
+                            const { done, value } = await reader.read();
+                            if (done) break;
+
+                            buffer += decoder.decode(value, { stream: true });
+                            const lines = buffer.split('\n');
+                            
+                            buffer = lines.pop() || '';
+
+                            for (const line of lines) {
+                                if (line.startsWith('data: ')) {
+                                    try {
+                                        const data = JSON.parse(line.slice(6));
+                                        
+                                        if (data.type === 'status') {
+                                            this.loadingMessage = data.message;
+                                        }
+                                        else if (data.type === 'error_info') {
+                                            this.messages[assistantMsgIndex].error_info = data.data;
+                                        }
+                                        else if (data.type === 'stackoverflow') {
+                                            this.messages[assistantMsgIndex].stackoverflow_results = data.data;
+                                        }
+                                        else if (data.type === 'web') {
+                                            this.messages[assistantMsgIndex].web_results = data.data;
+                                        }
+                                        else if (data.type === 'chunk') {
+                                            this.messages[assistantMsgIndex].content += data.content;
+                                            
+                                            this.$nextTick(() => {
+                                                const messagesDiv = document.getElementById('messages');
+                                                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+                                            });
+                                        }
+                                        else if (data.type === 'done') {
+                                            this.messages[assistantMsgIndex].streaming = false;
+                                        }
+                                        else if (data.type === 'error') {
+                                            alert('Error: ' + data.message);
+                                            this.messages.pop();
+                                        }
+                                    } catch (parseError) {
+                                        console.error('Failed to parse SSE data:', parseError, 'Line:', line);
+                                    }
+                                }
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Request failed:', error);
+                        alert('Request failed: ' + error.message);
+                        if (this.messages[assistantMsgIndex] && this.messages[assistantMsgIndex].content === '') {
+                            this.messages.pop();
+                        }
+                    } finally {
+                        this.loading = false;
+                    }
+                }
+            };
+        }
+    </script>
+</body>
+</html>

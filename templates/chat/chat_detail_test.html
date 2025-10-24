@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat Test</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-4">Chat Session: {{ session.title }}</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-4">
+            <h2 class="text-xl mb-4">Messages:</h2>
+            {% for message in messages %}
+                <div class="mb-4 p-3 {% if message.role == 'user' %}bg-blue-100{% else %}bg-gray-100{% endif %} rounded">
+                    <strong>{{ message.role }}:</strong> {{ message.content }}
+                </div>
+            {% empty %}
+                <p>No messages yet. Start chatting!</p>
+            {% endfor %}
+        </div>
+        
+        <form method="POST" action="{% url 'chat:message_create' session.id %}" class="flex gap-2">
+            {% csrf_token %}
+            <input type="text" name="message" placeholder="Type a message..." class="flex-1 border rounded px-4 py-2">
+            <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded">Send</button>
+        </form>
+    </div>
+</body>
+</html>
+ 

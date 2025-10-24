@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Upload Repository - Jarvis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="max-w-2xl mx-auto p-6" x-data="uploadApp()">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h1 class="text-3xl font-bold mb-2">Upload Repository</h1>
+            <p class="text-gray-600">Upload your code repository for analysis</p>
+            <a href="/repo/" class="text-blue-600 hover:underline mt-2 inline-block">← Back to repositories</a>
+        </div>
+
+        <!-- Upload Form -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <!-- Upload Type Selector -->
+            <div class="mb-6">
+                <label class="block text-sm font-medium mb-2">Upload Type</label>
+                <div class="flex gap-4">
+                    <button 
+                        @click="uploadType = 'zip'" 
+                        :class="uploadType === 'zip' ? 'bg-blue-500 text-white' : 'bg-gray-200'"
+                        class="flex-1 py-3 rounded font-semibold transition"
+                    >
+                        📦 ZIP File
+                    </button>
+                    <button 
+                        @click="uploadType = 'github'" 
+                        :class="uploadType === 'github' ? 'bg-blue-500 text-white' : 'bg-gray-200'"
+                        class="flex-1 py-3 rounded font-semibold transition"
+                    >
+                        🐙 GitHub URL
+                    </button>
+                </div>
+            </div>
+
+            <form @submit.prevent="submitForm">
+                <!-- Repository Name -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Repository Name *</label>
+                    <input 
+                        type="text" 
+                        x-model="repoName" 
+                        required
+                        placeholder="my-awesome-project"
+                        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                </div>
+
+                <!-- Repository Description -->
+                <div class="mb-4">
+                    <label class="block text-sm font-medium mb-2">Description (Optional)</label>
+                    <textarea 
+                        x-model="repoDescription" 
+                        rows="3"
+                        placeholder="Brief description of your project..."
+                        class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    ></textarea>
+                </div>
+
+                <!-- ZIP Upload -->
+                <div x-show="uploadType === 'zip'" class="mb-6">
+                    <label class="block text-sm font-medium mb-2">Select ZIP File *</label>
+                    <input 
+                        type="file" 
+                        @change="handleFileSelect"
+                        accept=".zip"
+                        class="w-full border rounded px-3 py-2"
+                    >
+                    <p class="text-sm text-gray-500 mt-1">Max size: 100MB</p>
+                </div>
+
+                <!-- GitHub URL -->
+                <div x-show="uploadType === 'github'" class="mb-6">
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium mb-2">GitHub URL *</label>
+                        <input 
+                            type="url" 
+                            x-model="githubUrl" 
+                            placeholder="https://github.com/username/repo"
+                            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Branch</label>
+                        <input 
+                            type="text" 
+                            x-model="githubBranch" 
+                            placeholder="main"
+                            class="w-full border rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                    </div>
+                </div>
+
+                <!-- Submit Button -->
+                <button 
+                    type="submit"
+                    :disabled="uploading"
+                    class="w-full bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 text-white py-3 rounded font-semibold transition"
+                >
+                    <span x-show="!uploading">🚀 Upload & Process</span>
+                    <span x-show="uploading">
+                        <svg class="animate-spin h-5 w-5 inline-block mr-2" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Uploading...
+                    </span>
+                </button>
+
+                <!-- Error Message -->
+                <div x-show="errorMessage" class="mt-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+                    <span x-text="errorMessage"></span>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+    function uploadApp() {
+        return {
+            uploadType: 'zip',
+            repoName: '',
+            repoDescription: '',
+            githubUrl: '',
+            githubBranch: 'main',
+            selectedFile: null,
+            uploading: false,
+            errorMessage: '',
+
+            handleFileSelect(event) {
+                this.selectedFile = event.target.files[0];
+            },
+
+            async submitForm() {
+                this.errorMessage = '';
+                
+                // Validation
+                if (!this.repoName.trim()) {
+                    this.errorMessage = 'Repository name is required';
+                    return;
+                }
+
+                if (this.uploadType === 'zip' && !this.selectedFile) {
+                    this.errorMessage = 'Please select a ZIP file';
+                    return;
+                }
+
+                if (this.uploadType === 'github' && !this.githubUrl.trim()) {
+                    this.errorMessage = 'GitHub URL is required';
+                    return;
+                }
+
+                this.uploading = true;
+
+                try {
+                    const formData = new FormData();
+                    formData.append('upload_type', this.uploadType);
+                    formData.append('repo_name', this.repoName);
+                    formData.append('repo_description', this.repoDescription);
+
+                    if (this.uploadType === 'zip') {
+                        formData.append('zip_file', this.selectedFile);
+                    } else {
+                        formData.append('github_url', this.githubUrl);
+                        formData.append('github_branch', this.githubBranch);
+                    }
+
+                    const response = await fetch('/repo/upload/submit/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: formData
+                    });
+
+                    const data = await response.json();
+
+                    if (data.success) {
+                        window.location.href = data.redirect_url;
+                    } else {
+                        this.errorMessage = data.error || 'Upload failed';
+                        this.uploading = false;
+                    }
+                } catch (error) {
+                    this.errorMessage = 'Upload failed: ' + error.message;
+                    this.uploading = false;
+                }
+            }
+        }
+    }
+    </script>
+</body>
+</html>
+

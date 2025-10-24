@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Repositories - Jarvis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="max-w-4xl mx-auto p-6" x-data="repoListApp()">
+        <!-- Header -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800 mb-2">My Repositories</h1>
+                <p class="text-gray-600">Manage your uploaded code repositories</p>
+            </div>
+            <a 
+                href="/repo/upload/"
+                class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 shadow-sm hover:shadow-md"
+            >
+                + Upload New
+            </a>
+        </div>
+
+        <!-- Repository List -->
+        <div class="space-y-4">
+            {% for repo in repositories %}
+            <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow duration-200" x-data="repoCard('{{ repo.id }}', '{{ repo.status }}', {{ repo.total_files }}, {{ repo.total_chunks }}, '{{ repo.upload_type }}')">
+                <!-- Repo Header -->
+                <div class="flex justify-between items-start mb-4">
+                    <div class="flex-1">
+                        <h2 class="text-xl font-bold text-gray-800">{{ repo.name }}</h2>
+                        <p class="text-gray-600 text-sm mt-1">
+                            {{ repo.description|default:"No description provided" }}
+                        </p>
+                    </div>
+                    <span 
+                        class="px-3 py-1 rounded-full text-xs font-semibold uppercase tracking-wide ml-4"
+                        :class="{
+                            'bg-green-100 text-green-800': status === 'completed',
+                            'bg-red-100 text-red-800': status === 'failed',
+                            'bg-yellow-100 text-yellow-800': status === 'processing',
+                            'bg-gray-100 text-gray-800': status === 'pending'
+                        }"
+                        x-text="status"
+                    ></span>
+                </div>
+
+                <!-- Repo Stats -->
+                <div class="grid grid-cols-3 gap-4 mb-4">
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-gray-500">Type:</span>
+                        <span class="font-medium text-gray-800">
+                            <span x-show="uploadType === 'github'">🐙 GitHub</span>
+                            <span x-show="uploadType === 'zip'">📦 ZIP</span>
+                        </span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-gray-500">Files:</span>
+                        <span class="font-medium text-gray-800" x-text="fileCount"></span>
+                    </div>
+                    <div class="flex items-center space-x-2 text-sm">
+                        <span class="text-gray-500">Chunks:</span>
+                        <span class="font-medium text-gray-800" x-text="chunkCount"></span>
+                    </div>
+                </div>
+
+                <!-- Processing Indicator -->
+                <div x-show="status === 'processing'" class="mb-4">
+                    <div class="flex items-center space-x-2 text-sm text-blue-600">
+                        <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Processing repository...</span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2 flex-wrap">
+                    <!-- Chat Button -->
+                    <a 
+                        x-show="status === 'completed'"
+                        href="/chat/new/?repo={{ repo.id }}"
+                        class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm hover:shadow-md"
+                    >
+                        💬 Chat
+                    </a>
+
+                    <!-- Sync Button (GitHub only) -->
+                    <button 
+                        x-show="status === 'completed' && uploadType === 'github'"
+                        @click="syncRepo()"
+                        :disabled="syncing"
+                        class="bg-green-500 hover:bg-green-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm hover:shadow-md"
+                    >
+                        <span x-show="!syncing">🔄 Sync</span>
+                        <span x-show="syncing" class="flex items-center space-x-2">
+                            <svg class="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Syncing...</span>
+                        </span>
+                    </button>
+
+                    <!-- Status Button -->
+                    <a 
+                        x-show="status === 'processing' || status === 'failed'"
+                        href="/repo/{{ repo.id }}/status/"
+                        class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200"
+                    >
+                        📊 View Status
+                    </a>
+
+                    <!-- Delete Button -->
+                    <button 
+                        @click="deleteRepo()"
+                        :disabled="deleting"
+                        class="bg-red-500 hover:bg-red-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors duration-200 shadow-sm hover:shadow-md ml-auto"
+                    >
+                        <span x-show="!deleting">🗑️ Delete</span>
+                        <span x-show="deleting">Deleting...</span>
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <!-- Empty State -->
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <div class="text-6xl mb-4">📁</div>
+                <h3 class="text-xl font-semibold text-gray-800 mb-2">No repositories yet</h3>
+                <p class="text-gray-600 mb-6">Upload your first repository to get started</p>
+                <a 
+                    href="/repo/upload/"
+                    class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg font-semibold transition-colors duration-200 shadow-sm hover:shadow-md inline-block"
+                >
+                    Upload Your First Repository
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <script>
+        // Utility function to get CSRF token
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
+
+        // Main app component
+        function repoListApp() {
+            return {
+                init() {
+                    console.log('Repository list initialized');
+                }
+            };
+        }
+
+        // Repository card component
+        function repoCard(repoId, initialStatus, initialFiles, initialChunks, uploadType) {
+            return {
+                repoId: repoId,
+                status: initialStatus,
+                fileCount: initialFiles,
+                chunkCount: initialChunks,
+                uploadType: uploadType,
+                syncing: false,
+                deleting: false,
+                pollInterval: null,
+
+                init() {
+                    // Start polling if repository is being processed
+                    if (this.status === 'processing') {
+                        this.startPolling();
+                    }
+                },
+
+                // Start polling for status updates
+                startPolling() {
+                    this.pollInterval = setInterval(() => {
+                        this.fetchStats();
+                    }, 3000); // Poll every 3 seconds
+                },
+
+                // Stop polling
+                stopPolling() {
+                    if (this.pollInterval) {
+                        clearInterval(this.pollInterval);
+                        this.pollInterval = null;
+                    }
+                },
+
+                // Fetch repository statistics
+                async fetchStats() {
+                    try {
+                        const response = await fetch(`/repo/${this.repoId}/status/api/`);
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        // Update component state
+                        this.status = data.status;
+                        this.fileCount = data.total_files || 0;
+                        this.chunkCount = data.total_chunks || 0;
+
+                        // Stop polling if processing is complete
+                        if (data.status === 'completed' || data.status === 'failed') {
+                            this.stopPolling();
+                        }
+                    } catch (error) {
+                        console.error('Failed to fetch repository stats:', error);
+                        // Don't stop polling on error, will retry
+                    }
+                },
+
+                // Sync repository with GitHub
+                async syncRepo() {
+                    const confirmed = confirm('Sync repository with latest changes from GitHub?\n\nThis will pull the latest code and re-index it.');
+                    if (!confirmed) return;
+                    
+                    this.syncing = true;
+                    
+                    try {
+                        const response = await fetch(`/repo/${this.repoId}/sync/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            alert('✓ Sync started successfully!\n\nThe repository will be updated in the background.');
+                            this.status = 'processing';
+                            this.startPolling();
+                        } else {
+                            throw new Error(data.error || 'Unknown error occurred');
+                        }
+                    } catch (error) {
+                        console.error('Sync failed:', error);
+                        alert('✗ Sync failed: ' + error.message);
+                    } finally {
+                        this.syncing = false;
+                    }
+                },
+
+                // Delete repository
+                async deleteRepo() {
+                    const confirmed = confirm('⚠️ Delete this repository?\n\nThis action cannot be undone. All associated data will be permanently deleted.');
+                    if (!confirmed) return;
+                    
+                    this.deleting = true;
+                    
+                    try {
+                        const response = await fetch(`/repo/${this.repoId}/delete/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken')
+                            }
+                        });
+                        
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+                        
+                        // Stop polling before reload
+                        this.stopPolling();
+                        
+                        // Reload page to show updated list
+                        location.reload();
+                    } catch (error) {
+                        console.error('Delete failed:', error);
+                        alert('✗ Delete failed: ' + error.message);
+                        this.deleting = false;
+                    }
+                },
+
+                // Cleanup when component is destroyed
+                destroy() {
+                    this.stopPolling();
+                }
+            };
+        }
+    </script>
+</body>
+</html>

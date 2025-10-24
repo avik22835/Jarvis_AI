@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Chat - {{ session.title }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/showdown@2.1.0/dist/showdown.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/javascript.min.js"></script>
+    <style>
+        /* ✨ ANIMATED GRADIENT (from home.html) */
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-gradient {
+            background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #667eea 50%, #764ba2 75%, #667eea 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+
+        .markdown-body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            font-size: 14px;
+            line-height: 1.6;
+            color: #24292f;
+        }
+        .markdown-body h1, .markdown-body h2, .markdown-body h3 {
+            font-weight: 600;
+            margin: 16px 0 8px 0;
+        }
+        .markdown-body h1 { font-size: 1.5em; border-bottom: 1px solid #e5e7eb; padding-bottom: 6px; }
+        .markdown-body h2 { font-size: 1.3em; }
+        .markdown-body h3 { font-size: 1.1em; }
+        .markdown-body ul, .markdown-body ol {
+            margin: 8px 0;
+            padding-left: 24px;
+        }
+        .markdown-body li { margin: 4px 0; }
+        .markdown-body p { margin: 8px 0; }
+        .markdown-body strong { font-weight: 600; color: #1f2937; }
+        .markdown-body code {
+            background: #f6f8fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            color: #ef4444;
+        }
+        .markdown-body pre {
+            background: #1e1e1e !important;
+            color: #d4d4d4;
+            padding: 16px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 12px 0;
+        }
+        .markdown-body pre code {
+            background: none !important;
+            padding: 0;
+            color: inherit;
+        }
+        .markdown-body table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 12px 0;
+        }
+        .markdown-body table th, .markdown-body table td {
+            border: 1px solid #d0d7de;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .markdown-body table th {
+            background: #f6f8fa;
+            font-weight: 600;
+        }
+        .markdown-body blockquote {
+            border-left: 4px solid #3b82f6;
+            padding-left: 16px;
+            margin: 12px 0;
+            color: #6b7280;
+        }
+        .incomplete-code-block {
+            background: #f6f8fa;
+            border-left: 3px solid #3b82f6;
+            padding: 12px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            color: #374151;
+            margin: 8px 0;
+        }
+        @keyframes fade-in {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fade-in 0.3s ease-out;
+        }
+
+        /* ✨ PULSE ANIMATION for thinking indicator */
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.1); }
+        }
+        .pulse-glow {
+            animation: pulse-glow 1.5s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-4xl mx-auto p-4" x-data="chatApp()">
+        <!-- ✨ BEAUTIFIED HEADER with Gradient -->
+        <div class="animated-gradient text-white rounded-xl shadow-xl p-6 mb-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <span class="text-4xl">💬</span>
+                        <h1 class="text-3xl font-bold">{{ session.title }}</h1>
+                    </div>
+                    <div class="flex gap-4 text-sm mt-2">
+                        <a href="/chat/" class="text-white/90 hover:text-white font-medium transition hover:scale-105 transform">← All chats</a>
+                        <a href="/repo/" class="text-white/90 hover:text-white font-medium transition hover:scale-105 transform">📂 Repositories</a>
+                        <a href="/debug/" class="text-white/90 hover:text-white font-medium transition hover:scale-105 transform">🔧 Debug Assistant</a>
+                    </div>
+                </div>
+                <div class="text-sm text-white/90" x-show="loading">
+                    <div class="flex items-center gap-2 bg-white/20 px-4 py-2 rounded-lg backdrop-blur-sm">
+                        <span class="pulse-glow text-xl">🤖</span>
+                        <span class="font-medium">Jarvis is thinking...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ✨ BEAUTIFIED Suggested Prompts Section -->
+        {% if suggested_prompts %}
+        <div class="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl shadow-lg p-6 mb-6 border border-blue-100">
+            <h2 class="text-xl font-bold mb-4 flex items-center text-gray-800">
+                <span class="text-3xl mr-3">💡</span>
+                Suggested Questions
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {% for prompt in suggested_prompts %}
+                <button 
+                    onclick="fillQuestion('{{ prompt|escapejs }}')"
+                    class="text-left p-4 bg-white hover:bg-blue-50 border border-blue-200 rounded-xl transition transform hover:scale-105 hover:shadow-xl text-sm group"
+                >
+                    <span class="text-blue-600 mr-2 group-hover:scale-125 transition inline-block text-lg">🔍</span>
+                    <span class="font-medium text-gray-700">{{ prompt }}</span>
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ✨ BEAUTIFIED Messages Area -->
+        <div class="bg-white rounded-xl shadow-xl p-6 mb-6 h-[500px] overflow-y-auto border border-gray-100" x-ref="messages">
+            {% for message in messages %}
+            <div class="mb-6 animate-fade-in {% if message.role == 'user' %}text-right{% endif %}">
+                <div class="inline-block px-5 py-3 rounded-xl max-w-2xl text-left shadow-md transition transform hover:scale-[1.02] {% if message.role == 'user' %}bg-gradient-to-r from-blue-500 to-blue-600 text-white{% else %}bg-gray-50 border border-gray-200 hover:shadow-lg{% endif %}">
+                    {% if message.role == 'user' %}
+                        <div class="flex items-start gap-2 mb-1">
+                            <span class="text-lg">👤</span>
+                            <span class="text-xs font-semibold opacity-90">You</span>
+                        </div>
+                        <div class="whitespace-pre-wrap text-sm">{{ message.content }}</div>
+                        {% if message.has_image %}
+                            <img src="/media/{{ message.image_path }}" class="mt-3 rounded-lg max-w-md border-2 border-white/30 shadow-lg">
+                        {% endif %}
+                    {% else %}
+                        <div class="flex items-start gap-2 mb-2">
+                            <span class="text-lg">🤖</span>
+                            <span class="text-xs font-semibold text-gray-600">Jarvis AI</span>
+                        </div>
+                        <div class="markdown-body"></div>
+                        <script>
+                            (function() {
+                                const el = document.currentScript.previousElementSibling;
+                                const content = `{{ message.content|escapejs }}`;
+                                const converter = new showdown.Converter({ 
+                                    tables: true, 
+                                    strikethrough: true, 
+                                    emoji: true,
+                                    ghCodeBlocks: true,
+                                    tasklists: true
+                                });
+                                el.innerHTML = converter.makeHtml(content);
+                                el.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                            })();
+                        </script>
+                    {% endif %}
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center text-gray-400 py-16">
+                <div class="text-6xl mb-4 animate-fade-in">💬</div>
+                <p class="text-lg font-medium text-gray-500 mb-2">No messages yet. Start chatting!</p>
+                <p class="text-sm text-gray-400">💡 Tip: You can paste images with <kbd class="px-2 py-1 bg-gray-200 rounded text-xs">Ctrl+V</kbd></p>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- ✨ BEAUTIFIED Input Form -->
+        <form @submit.prevent="sendMessage" class="bg-white rounded-xl shadow-xl p-5 border border-gray-100">
+            <!-- Image Preview -->
+            <template x-if="imagePreview">
+                <div class="mb-4 relative inline-block animate-fade-in">
+                    <img :src="imagePreview" class="h-28 rounded-lg border-2 border-blue-200 shadow-lg">
+                    <button @click="clearImage" type="button" 
+                            class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-7 h-7 flex items-center justify-center hover:bg-red-600 transition transform hover:scale-110 shadow-lg font-bold">
+                        ×
+                    </button>
+                    <div class="flex items-center gap-2 mt-2">
+                        <span class="text-sm text-green-600 font-medium">📷 Image attached</span>
+                        <span class="text-xs text-gray-500">(will be analyzed)</span>
+                    </div>
+                </div>
+            </template>
+
+            <div class="flex gap-3">
+                <!-- ✨ BEAUTIFIED Image Upload Button -->
+                <label class="cursor-pointer group">
+                    <input type="file" @change="handleFileSelect" accept="image/*" class="hidden" x-ref="fileInput">
+                    <div class="p-3 bg-gradient-to-r from-blue-50 to-purple-50 hover:from-blue-100 hover:to-purple-100 rounded-xl transition border-2 border-blue-200 hover:border-blue-300 transform hover:scale-110 shadow-md hover:shadow-lg" 
+                         title="Upload image or press Ctrl+V to paste">
+                        <span class="text-2xl group-hover:scale-110 transition inline-block">📷</span>
+                    </div>
+                </label>
+
+                <!-- ✨ BEAUTIFIED Text Input -->
+                <input 
+                    type="text" 
+                    x-model="input" 
+                    placeholder="Ask about your code or paste an image (Ctrl+V)..." 
+                    class="flex-1 border-2 border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition shadow-sm hover:shadow-md" 
+                    :disabled="loading" 
+                    x-ref="input"
+                >
+
+                <!-- ✨ BEAUTIFIED Send Button -->
+                <button 
+                    type="submit" 
+                    class="bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 disabled:from-gray-400 disabled:to-gray-400 text-white px-8 py-3 rounded-xl font-bold transition transform hover:scale-105 shadow-lg hover:shadow-xl" 
+                    :disabled="loading || (!input.trim() && !selectedFile)"
+                >
+                    <span x-show="!loading" class="flex items-center gap-2">
+                        <span>Send</span>
+                        <span class="text-lg">🚀</span>
+                    </span>
+                    <span x-show="loading">
+                        <svg class="animate-spin h-5 w-5 inline-block" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <script>
+    // Global function for filling questions from suggested prompts
+    function fillQuestion(question) {
+        const app = Alpine.$data(document.querySelector('[x-data]'));
+        app.input = question;
+        app.$refs.input.focus();
+    }
+
+    function chatApp() {
+        return {
+            input: '',
+            loading: false,
+            currentAssistantDiv: null,
+            displayedText: '',
+            pendingText: '',
+            converter: null,
+            animationRunning: false,
+            selectedFile: null,
+            imagePreview: null,
+
+            init() {
+                this.converter = new showdown.Converter({ 
+                    tables: true, 
+                    strikethrough: true, 
+                    emoji: true,
+                    ghCodeBlocks: true,
+                    tasklists: true
+                });
+
+                // Listen for Ctrl+V paste for images
+                document.addEventListener('paste', this.handlePaste.bind(this));
+                console.log('📋 Image paste enabled!');
+
+                // Pre-fill question if provided
+                {% if pre_fill_question %}
+                this.input = '{{ pre_fill_question|escapejs }}';
+                this.$nextTick(() => {
+                    this.$refs.input.focus();
+                });
+                {% endif %}
+            },
+
+            handlePaste(event) {
+                const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+                
+                for (let item of items) {
+                    if (item.type.indexOf('image') !== -1) {
+                        event.preventDefault();
+                        
+                        const blob = item.getAsFile();
+                        const file = new File([blob], 'pasted-image.png', { type: blob.type });
+                        this.selectedFile = file;
+                        
+                        const reader = new FileReader();
+                        reader.onload = (e) => {
+                            this.imagePreview = e.target.result;
+                            this.showNotification('📷 Image pasted! Ask a question about it.');
+                        };
+                        reader.readAsDataURL(blob);
+                        
+                        break;
+                    }
+                }
+            },
+
+            handleFileSelect(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.selectedFile = file;
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.imagePreview = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            },
+
+            clearImage() {
+                this.selectedFile = null;
+                this.imagePreview = null;
+                this.$refs.fileInput.value = '';
+            },
+
+            showNotification(message) {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-xl shadow-2xl z-50 animate-fade-in font-medium';
+                notification.innerHTML = `<span class="text-xl mr-2">✅</span>${message}`;
+                document.body.appendChild(notification);
+                
+                setTimeout(() => {
+                    notification.style.opacity = '0';
+                    notification.style.transition = 'opacity 0.5s';
+                    setTimeout(() => notification.remove(), 500);
+                }, 3000);
+            },
+
+            async sendMessage() {
+                if ((!this.input.trim() && !this.selectedFile) || this.loading) return;
+
+                const msg = this.input;
+                const hasImage = !!this.selectedFile;
+                const imageSrc = this.imagePreview;
+                
+                this.input = '';
+                this.loading = true;
+
+                this.addUserMessage(msg || '(Image uploaded)', imageSrc);
+                
+                this.currentAssistantDiv = this.createAssistantContainer();
+                this.displayedText = '';
+                this.pendingText = '';
+                this.startAnimation();
+
+                try {
+                    const formData = new FormData();
+                    formData.append('message', msg);
+                    if (this.selectedFile) {
+                        formData.append('image', this.selectedFile);
+                    }
+
+                    this.clearImage();
+
+                    const response = await fetch('/chat/{{ session.id }}/stream/', {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        body: formData
+                    });
+
+                    const reader = response.body.getReader();
+                    const decoder = new TextDecoder();
+                    let buffer = '';
+
+                    while (true) {
+                        const { done, value } = await reader.read();
+                        if (done) break;
+
+                        buffer += decoder.decode(value, { stream: true });
+                        const lines = buffer.split('\n');
+                        buffer = lines.pop();
+
+                        for (const line of lines) {
+                            if (line.startsWith('data: ')) {
+                                try {
+                                    const data = JSON.parse(line.substring(6));
+                                    if (data.type === 'chunk') {
+                                        this.pendingText += data.content;
+                                    } else if (data.type === 'done') {
+                                        await this.finishAnimation();
+                                        this.loading = false;
+                                    } else if (data.type === 'error') {
+                                        this.pendingText = '⚠️ Error: ' + data.error;
+                                        await this.finishAnimation();
+                                        this.loading = false;
+                                    }
+                                } catch (e) {
+                                    console.error('Parse error:', e);
+                                }
+                            }
+                        }
+                    }
+                } catch (err) {
+                    this.pendingText = '⚠️ Error: ' + err.message;
+                    await this.finishAnimation();
+                    this.loading = false;
+                } finally {
+                    this.$nextTick(() => this.$refs.input.focus());
+                }
+            },
+
+            async startAnimation() {
+                this.animationRunning = true;
+                while (this.animationRunning) {
+                    if (this.displayedText.length < this.pendingText.length) {
+                        this.displayedText = this.pendingText.substring(0, this.displayedText.length + 1);
+                        this.renderMarkdownSmart();
+                        await new Promise(r => setTimeout(r, 15));
+                    } else {
+                        await new Promise(r => setTimeout(r, 50));
+                    }
+                }
+            },
+
+            async finishAnimation() {
+                this.displayedText = this.pendingText;
+                this.renderMarkdownSmart();
+                this.animationRunning = false;
+                this.currentAssistantDiv = null;
+            },
+
+            renderMarkdownSmart() {
+                if (!this.currentAssistantDiv || !this.displayedText) return;
+
+                const mdDiv = this.currentAssistantDiv.querySelector('.markdown-body');
+                
+                // Check if there's an incomplete code block
+                const codeBlockCount = (this.displayedText.match(/```/g) || []).length;
+                const hasIncompleteCodeBlock = codeBlockCount % 2 !== 0;
+
+                if (hasIncompleteCodeBlock) {
+                    // Find where the incomplete code block starts
+                    const lastCodeBlockStart = this.displayedText.lastIndexOf('```');
+                    const beforeCodeBlock = this.displayedText.substring(0, lastCodeBlockStart);
+                    const incompleteCodeBlock = this.displayedText.substring(lastCodeBlockStart);
+
+                    // Render everything BEFORE the incomplete code block as markdown
+                    let html = '';
+                    if (beforeCodeBlock) {
+                        html = this.converter.makeHtml(beforeCodeBlock);
+                    }
+                    
+                    // Show incomplete code block as plain styled text
+                    html += `<div class="incomplete-code-block">${this.escapeHtml(incompleteCodeBlock)}</div>`;
+                    
+                    mdDiv.innerHTML = html;
+                    mdDiv.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                } else {
+                    // No incomplete code blocks - render normally
+                    mdDiv.innerHTML = this.converter.makeHtml(this.displayedText);
+                    mdDiv.querySelectorAll('pre code').forEach(b => hljs.highlightElement(b));
+                }
+                
+                this.scrollToBottom();
+            },
+
+            addUserMessage(content, imageSrc = null) {
+                const div = document.createElement('div');
+                div.className = 'mb-6 text-right animate-fade-in';
+                let html = `
+                    <div class="inline-block px-5 py-3 rounded-xl max-w-2xl bg-gradient-to-r from-blue-500 to-blue-600 text-white text-left shadow-md transition transform hover:scale-[1.02]">
+                        <div class="flex items-start gap-2 mb-1">
+                            <span class="text-lg">👤</span>
+                            <span class="text-xs font-semibold opacity-90">You</span>
+                        </div>
+                        <div class="whitespace-pre-wrap text-sm">${this.escapeHtml(content)}</div>
+                `;
+                if (imageSrc) {
+                    html += `<img src="${imageSrc}" class="mt-3 rounded-lg max-w-md border-2 border-white/30 shadow-lg">`;
+                }
+                html += `</div>`;
+                div.innerHTML = html;
+                this.$refs.messages.appendChild(div);
+                this.scrollToBottom();
+            },
+
+            createAssistantContainer() {
+                const div = document.createElement('div');
+                div.className = 'mb-6 text-left animate-fade-in';
+                div.innerHTML = `
+                    <div class="inline-block px-5 py-3 rounded-xl max-w-2xl bg-gray-50 border border-gray-200 shadow-md transition transform hover:scale-[1.02] hover:shadow-lg">
+                        <div class="flex items-start gap-2 mb-2">
+                            <span class="text-lg">🤖</span>
+                            <span class="text-xs font-semibold text-gray-600">Jarvis AI</span>
+                        </div>
+                        <div class="markdown-body"></div>
+                    </div>
+                `;
+                this.$refs.messages.appendChild(div);
+                this.scrollToBottom();
+                return div;
+            },
+
+            scrollToBottom() {
+                this.$refs.messages.scrollTop = this.$refs.messages.scrollHeight;
+            },
+
+            escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
+        }
+    }
+    </script>
+</body>
+</html>

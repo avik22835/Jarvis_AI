@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jarvis AI - Your Intelligent Code Assistant</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gradient {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        .animated-gradient {
+            background: linear-gradient(-45deg, #667eea 0%, #764ba2 25%, #667eea 50%, #764ba2 75%, #667eea 100%);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+        .float { animation: float 3s ease-in-out infinite; }
+    </style>
+</head>
+<body class="bg-gray-50">
+    
+    <!-- ✅ NAVBAR -->
+    <nav class="bg-white shadow-md border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between items-center h-16">
+                <!-- Logo -->
+                <div class="flex items-center space-x-2">
+                    <span class="text-3xl">🤖</span>
+                    <span class="text-2xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                        Jarvis AI
+                    </span>
+                </div>
+                
+                <!-- Navigation Links -->
+                {% if user.is_authenticated %}
+                <div class="hidden md:flex items-center space-x-6">
+                    <a href="{% url 'home' %}" class="text-gray-700 hover:text-blue-600 font-medium transition">Home</a>
+                    <a href="{% url 'chat:session_list' %}" class="text-gray-700 hover:text-blue-600 font-medium transition">💬 Chat</a>
+                    
+                    <!-- ✅ NEW: Memory Debug Link -->
+                    <a href="{% url 'chat:memory_debug' %}" class="text-gray-700 hover:text-blue-600 font-medium transition">🧠 Memory</a>
+                    
+                    <a href="{% url 'repo_ingest:repository_list' %}" class="text-gray-700 hover:text-blue-600 font-medium transition">📁 Repositories</a>
+                    <a href="{% url 'debugger:debug_assistant' %}" class="text-gray-700 hover:text-blue-600 font-medium transition">🐛 Debug</a>
+                    <a href="{% url 'logout' %}" class="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition">Logout</a>
+                </div>
+                {% else %}
+                <div class="flex items-center space-x-4">
+                    <a href="{% url 'login' %}" class="text-gray-700 hover:text-blue-600 font-medium transition">Login</a>
+                    <a href="{% url 'signup' %}" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Sign Up</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <div class="animated-gradient text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="float mb-8">
+                <span class="text-8xl">🤖</span>
+            </div>
+            <h1 class="text-5xl md:text-6xl font-bold mb-6">
+                Welcome to Jarvis AI
+            </h1>
+            <p class="text-xl md:text-2xl mb-8 text-white/90">
+                Your Intelligent Code Assistant with RAG, GitHub Integration & AI Debugging
+            </p>
+            
+            {% if user.is_authenticated %}
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="{% url 'chat:session_create' %}" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                    💬 Start Chatting
+                </a>
+                <a href="{% url 'repo_ingest:upload_page' %}" class="bg-green-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                    📂 Upload Repository
+                </a>
+                <a href="{% url 'debugger:debug_assistant' %}" class="bg-purple-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                    🐛 Debug Code
+                </a>
+                
+                <!-- ✅ NEW: Memory Debug Button -->
+                <a href="{% url 'chat:memory_debug' %}" class="bg-orange-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                    🧠 Memory Debug
+                </a>
+            </div>
+            {% else %}
+            <div class="flex flex-wrap justify-center gap-4">
+                <a href="{% url 'login' %}" class="bg-white text-blue-600 px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                    Login to Get Started
+                </a>
+                <a href="{% url 'guest_login' %}" class="bg-green-500 text-white px-8 py-4 rounded-lg font-bold text-lg hover:shadow-2xl transition transform hover:scale-105">
+                    🎯 Try as Guest
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="max-w-7xl mx-auto px-4 py-16">
+        <h2 class="text-4xl font-bold text-center mb-12 text-gray-800">✨ Key Features</h2>
+        
+        <div class="grid md:grid-cols-3 gap-8">
+            <!-- Feature 1 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-5xl mb-4">💬</div>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">AI Chat with RAG</h3>
+                <p class="text-gray-600">
+                    Chat about your codebase with context-aware AI using Retrieval-Augmented Generation
+                </p>
+            </div>
+
+            <!-- Feature 2 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-5xl mb-4">📂</div>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">GitHub Integration</h3>
+                <p class="text-gray-600">
+                    Upload repos via ZIP or GitHub URL with smart incremental sync
+                </p>
+            </div>
+
+            <!-- Feature 3 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-5xl mb-4">🐛</div>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">AI Debug Assistant</h3>
+                <p class="text-gray-600">
+                    Upload error screenshots, get solutions from StackOverflow & Web
+                </p>
+            </div>
+
+            <!-- Feature 4 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-5xl mb-4">🔍</div>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">Hybrid Search</h3>
+                <p class="text-gray-600">
+                    Combines semantic and keyword search with Gemini-powered reranking
+                </p>
+            </div>
+
+            <!-- Feature 5 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-5xl mb-4">📸</div>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">Image Analysis</h3>
+                <p class="text-gray-600">
+                    Paste images with Ctrl+V, analyze errors with OCR
+                </p>
+            </div>
+
+            <!-- Feature 6 -->
+            <div class="bg-white rounded-xl shadow-lg p-8 hover:shadow-2xl transition transform hover:scale-105">
+                <div class="text-5xl mb-4">⚡</div>
+                <h3 class="text-2xl font-bold mb-3 text-gray-800">Real-time Streaming</h3>
+                <p class="text-gray-600">
+                    Experience smooth character-by-character AI response streaming
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tech Stack -->
+    <div class="bg-gray-100 py-16">
+        <div class="max-w-7xl mx-auto px-4">
+            <h2 class="text-3xl font-bold text-center mb-8 text-gray-800">🛠️ Built With</h2>
+            <div class="flex flex-wrap justify-center gap-6 text-lg font-semibold text-gray-700">
+                <span class="bg-white px-6 py-3 rounded-lg shadow">Django</span>
+                <span class="bg-white px-6 py-3 rounded-lg shadow">Elasticsearch</span>
+                <span class="bg-white px-6 py-3 rounded-lg shadow">Gemini AI</span>
+                <span class="bg-white px-6 py-3 rounded-lg shadow">Tree-sitter</span>
+                <span class="bg-white px-6 py-3 rounded-lg shadow">PostgreSQL</span>
+                <span class="bg-white px-6 py-3 rounded-lg shadow">TailwindCSS</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <p class="text-lg">🤖 <strong>Jarvis AI</strong> - Your Intelligent Code Assistant</p>
+            <p class="text-sm text-gray-400 mt-2">Powered by RAG, Gemini, and Elasticsearch</p>
+        </div>
+    </footer>
+</body>
+</html>
