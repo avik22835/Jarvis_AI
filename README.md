@@ -20,6 +20,10 @@
 - **AI Reranking**: Google Gemini Pro reranks top results for 40% better relevance
 - **Context-Aware**: Retrieves relevant code snippets from entire repositories
 
+###  Also one more feature that is best ie it has adaptive k retrieval for chunks based on the user prompt too if prompt 
+
+
+
 ### 💬 **Infinite Conversation Memory**
 - **Automatic Summarization**: Every 5 Q&A pairs condensed into memory batches
 - **Vector-Indexed Storage**: Summaries stored in Elasticsearch for semantic retrieval
